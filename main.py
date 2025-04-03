@@ -1,4 +1,4 @@
-import firebase_admin
+import firebase_admin 
 from firebase_admin import credentials, firestore
 from fastapi import FastAPI, Form, File, UploadFile, HTTPException
 import pickle
@@ -6,6 +6,10 @@ import numpy as np
 import pandas as pd
 import os
 from typing import List, Optional
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 firebase_key_path = os.getenv("FIREBASE_KEY_PATH", "multi-disease-predictor-db-firebase-adminsdk-fbsvc-88e7976178.json")
 # Initialize Firebase
@@ -56,6 +60,9 @@ async def predict_disease(
     images: Optional[List[UploadFile]] = None
 ):
     try:
+        # Log received input data
+        logging.info(f"Received Data - Age: {age}, Gender: {gender}, Weight: {weight}, Height: {height}, Hemoglobin: {hemoglobin}, RBC: {rbc_count}, WBC: {wbc_count}, Platelets: {platelets}, Iron: {iron_level}, B12: {vitamin_b12}, Folate: {folate}")
+        
         input_data = np.array([
             age, weight, height, hemoglobin, rbc_count, wbc_count, platelets, iron_level, vitamin_b12, folate
         ]).reshape(1, -1)
@@ -77,6 +84,7 @@ async def predict_disease(
             "medications": disease_data["medications"]
         }
 
+        # Save to Firestore
         db.collection("predictions").add({
             "age": age,
             "gender": gender,
@@ -93,14 +101,17 @@ async def predict_disease(
             "confidence": confidence,
         })
 
+        # Log prediction result
+        logging.info(f"Prediction: {prediction}, Confidence: {confidence}%")
+
         if images:
             for image in images:
-                print(f"Received image: {image.filename}")
+                logging.info(f"Received image: {image.filename}")
 
-        return prediction_result
+        return {"status": "success", "result": prediction_result}
 
     except Exception as e:
-        print("ERROR:", str(e))
+        logging.error("ERROR: " + str(e))
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
 
 if __name__ == "__main__":
