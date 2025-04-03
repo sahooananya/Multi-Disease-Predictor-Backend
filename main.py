@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 from pydantic import BaseModel
 import pandas as pd
-
+import os
 firebase_key_path = os.getenv("FIREBASE_KEY_PATH", "multi-disease-predictor-db-firebase-adminsdk-fbsvc-88e7976178.json")
 # Initialize Firebase
 cred = credentials.Certificate(firebase_key_path)
