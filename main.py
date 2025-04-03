@@ -6,8 +6,9 @@ import numpy as np
 from pydantic import BaseModel
 import pandas as pd
 
+firebase_key_path = os.getenv("FIREBASE_KEY_PATH", "multi-disease-predictor-db-firebase-adminsdk-fbsvc-88e7976178.json")
 # Initialize Firebase
-cred = credentials.Certificate(r"C:\Users\KIIT\PycharmProjects\Multi_disease_predictor\multi-disease-predictor-db-firebase-adminsdk-fbsvc-88e7976178.json")
+cred = credentials.Certificate(firebase_key_path)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
