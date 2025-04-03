@@ -50,25 +50,29 @@ def predict_disease(data: PredictionRequest):
     prediction = model.predict(symptoms_array)[0]
     confidence = float(np.max(model.predict_proba(symptoms_array)) * 100)
 
-    disease_data = disease_info.get(prediction, {"symptoms": [], "precautions": [], "recommendations": [], "medications": []})
+    disease_data = disease_info.get(prediction, {
+        "symptoms": [], 
+        "precautions": [], 
+        "recommendations": ["Consult a doctor", "Follow a healthy diet"],
+        "medications": [{"name": "Paracetamol", "dosage": "500mg", "frequency": "Twice a day"}]
+    })
 
     prediction_result = {
         "disease": prediction,
         "confidence": confidence,
-        "symptoms": disease_data["symptoms"],
-        "precautions": disease_data["precautions"],
         "recommendations": disease_data["recommendations"],
         "medications": disease_data["medications"]
     }
 
     # Store result in Firebase
-    doc_ref = db.collection("predictions").add({
+    db.collection("predictions").add({
         "symptoms": data.symptoms,
         "disease": prediction,
         "confidence": confidence,
     })
 
-    return {"prediction": prediction_result}
+    return prediction_result  # ✅ Now matches frontend format!
+
 
 if __name__ == "__main__":
     import uvicorn
