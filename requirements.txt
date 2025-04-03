@@ -1,6 +1,6 @@
-firebase-admin
+fastapi
 uvicorn
 numpy
 pandas
 scikit-learn
-python-multipart
+firebase-admin
