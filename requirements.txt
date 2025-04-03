@@ -1,4 +1,4 @@
-fastapi
+firebase-admin
 uvicorn
 numpy
 pandas
