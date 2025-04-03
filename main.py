@@ -6,6 +6,8 @@ import numpy as np
 from pydantic import BaseModel
 import pandas as pd
 import os
+from fastapi import HTTPException
+
 firebase_key_path = os.getenv("FIREBASE_KEY_PATH", "multi-disease-predictor-db-firebase-adminsdk-fbsvc-88e7976178.json")
 # Initialize Firebase
 cred = credentials.Certificate(firebase_key_path)
@@ -44,34 +46,42 @@ class PredictionRequest(BaseModel):
     symptoms: list  # Example: [1, 0, 1, 0, 1] (Binary input for symptoms)
 
 # Predict disease and store user data in Firebase
+from fastapi import HTTPException
+
 @app.post("/predict")
 def predict_disease(data: PredictionRequest):
-    symptoms_array = np.array(data.symptoms).reshape(1, -1)
-    prediction = model.predict(symptoms_array)[0]
-    confidence = float(np.max(model.predict_proba(symptoms_array)) * 100)
+    try:
+        symptoms_array = np.array(data.symptoms).reshape(1, -1)
+        prediction = model.predict(symptoms_array)[0]
+        confidence = float(np.max(model.predict_proba(symptoms_array)) * 100)
 
-    disease_data = disease_info.get(prediction, {
-        "symptoms": [], 
-        "precautions": [], 
-        "recommendations": ["Consult a doctor", "Follow a healthy diet"],
-        "medications": [{"name": "Paracetamol", "dosage": "500mg", "frequency": "Twice a day"}]
-    })
+        disease_data = disease_info.get(prediction, {
+            "symptoms": [], 
+            "precautions": [], 
+            "recommendations": ["Consult a doctor", "Follow a healthy diet"],
+            "medications": [{"name": "Paracetamol", "dosage": "500mg", "frequency": "Twice a day"}]
+        })
 
-    prediction_result = {
-        "disease": prediction,
-        "confidence": confidence,
-        "recommendations": disease_data["recommendations"],
-        "medications": disease_data["medications"]
-    }
+        prediction_result = {
+            "disease": prediction,
+            "confidence": confidence,
+            "recommendations": disease_data["recommendations"],
+            "medications": disease_data["medications"]
+        }
 
-    # Store result in Firebase
-    db.collection("predictions").add({
-        "symptoms": data.symptoms,
-        "disease": prediction,
-        "confidence": confidence,
-    })
+        # Store result in Firebase
+        db.collection("predictions").add({
+            "symptoms": data.symptoms,
+            "disease": prediction,
+            "confidence": confidence,
+        })
 
-    return prediction_result  # ✅ Now matches frontend format!
+        return prediction_result
+
+    except Exception as e:
+        print("ERROR:", str(e))  # Logs error
+        raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
+
 
 
 if __name__ == "__main__":
