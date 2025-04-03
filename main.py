@@ -17,8 +17,8 @@ with open("disease_prediction_model.pkl", "rb") as f:
     model = pickle.load(f)
 
 # Load datasets
-disease_symptoms_df = pd.read_csv(r"C:\Users\KIIT\Downloads\archive (2)\DiseaseAndSymptoms.csv")
-precaution_df = pd.read_csv(r"C:\Users\KIIT\Downloads\archive (2)\Disease precaution.csv")
+disease_symptoms_df = pd.read_csv("DiseaseAndSymptoms.csv")
+precaution_df = pd.read_csv("Disease precaution.csv")
 
 # Process disease data
 disease_info = {}
