@@ -1,12 +1,11 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
-from fastapi import FastAPI
+from fastapi import FastAPI, Form, File, UploadFile, HTTPException
 import pickle
 import numpy as np
-from pydantic import BaseModel
 import pandas as pd
 import os
-from fastapi import HTTPException
+from typing import List, Optional
 
 firebase_key_path = os.getenv("FIREBASE_KEY_PATH", "multi-disease-predictor-db-firebase-adminsdk-fbsvc-88e7976178.json")
 # Initialize Firebase
@@ -41,23 +40,32 @@ for _, row in disease_symptoms_df.iterrows():
 # FastAPI instance
 app = FastAPI()
 
-# Input schema for prediction request
-class PredictionRequest(BaseModel):
-    symptoms: list  # Example: [1, 0, 1, 0, 1] (Binary input for symptoms)
-
-# Predict disease and store user data in Firebase
-from fastapi import HTTPException
-
 @app.post("/predict")
-def predict_disease(data: PredictionRequest):
+async def predict_disease(
+    age: int = Form(...),
+    gender: str = Form(...),
+    weight: float = Form(...),
+    height: float = Form(...),
+    hemoglobin: float = Form(...),
+    rbc_count: float = Form(...),
+    wbc_count: float = Form(...),
+    platelets: float = Form(...),
+    iron_level: float = Form(...),
+    vitamin_b12: float = Form(...),
+    folate: float = Form(...),
+    images: Optional[List[UploadFile]] = None
+):
     try:
-        symptoms_array = np.array(data.symptoms).reshape(1, -1)
-        prediction = model.predict(symptoms_array)[0]
-        confidence = float(np.max(model.predict_proba(symptoms_array)) * 100)
+        input_data = np.array([
+            age, weight, height, hemoglobin, rbc_count, wbc_count, platelets, iron_level, vitamin_b12, folate
+        ]).reshape(1, -1)
+
+        prediction = model.predict(input_data)[0]
+        confidence = float(np.max(model.predict_proba(input_data)) * 100)
 
         disease_data = disease_info.get(prediction, {
-            "symptoms": [], 
-            "precautions": [], 
+            "symptoms": [],
+            "precautions": [],
             "recommendations": ["Consult a doctor", "Follow a healthy diet"],
             "medications": [{"name": "Paracetamol", "dosage": "500mg", "frequency": "Twice a day"}]
         })
@@ -69,24 +77,32 @@ def predict_disease(data: PredictionRequest):
             "medications": disease_data["medications"]
         }
 
-        # Store result in Firebase
         db.collection("predictions").add({
-            "symptoms": data.symptoms,
+            "age": age,
+            "gender": gender,
+            "weight": weight,
+            "height": height,
+            "hemoglobin": hemoglobin,
+            "rbc_count": rbc_count,
+            "wbc_count": wbc_count,
+            "platelets": platelets,
+            "iron_level": iron_level,
+            "vitamin_b12": vitamin_b12,
+            "folate": folate,
             "disease": prediction,
             "confidence": confidence,
         })
 
+        if images:
+            for image in images:
+                print(f"Received image: {image.filename}")
+
         return prediction_result
 
     except Exception as e:
-        print("ERROR:", str(e))  # Logs error
+        print("ERROR:", str(e))
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
-
-
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
