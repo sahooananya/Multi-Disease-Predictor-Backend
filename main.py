@@ -1,6 +1,7 @@
 import firebase_admin 
 from firebase_admin import credentials, firestore
 from fastapi import FastAPI, Form, File, UploadFile, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import pickle
 import numpy as np
 import pandas as pd
@@ -43,6 +44,16 @@ for _, row in disease_symptoms_df.iterrows():
 
 # FastAPI instance
 app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[""],  # Or use specific domain like ["https://yourusername.github.io"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.post("/predict")
 async def predict_disease(
