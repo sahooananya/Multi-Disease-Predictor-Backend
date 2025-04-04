@@ -48,7 +48,7 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[""],  # Or use specific domain like ["https://yourusername.github.io"]
+    allow_origins=["https://sahooananya.github.io/disease-predictor-frontend/"],  # Or use specific domain like ["https://yourusername.github.io"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
